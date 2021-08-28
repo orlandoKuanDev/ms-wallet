@@ -21,19 +21,17 @@ public class WalletTopic {
     @Value("${spring.kafka.bootstrap-servers}")
     private String host;
 
-    /** Creacion del Topico. */
     @Bean
-    public NewTopic topicCustomer() {
+    public NewTopic topicWallet() {
 
         return TopicBuilder
-                .name("saved-wallet-topic")
+                .name("service-wallet-topic")
                 .partitions(1)
                 .replicas(1)
                 .build();
 
     }
 
-    /** Creacion del Topico. */
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
 
@@ -49,7 +47,6 @@ public class WalletTopic {
 
     }
 
-    /** Creacion del Topico. */
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
 
