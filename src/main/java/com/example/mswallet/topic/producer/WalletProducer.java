@@ -1,5 +1,6 @@
 package com.example.mswallet.topic.producer;
 
+import com.example.mswallet.model.Customer;
 import com.example.mswallet.model.Deposit;
 import com.example.mswallet.model.Retire;
 import com.example.mswallet.model.Wallet;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class WalletProducer {
 
+    private final static String CREATE_CUSTOMER_TOPIC = "created-customer-topic";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -18,6 +20,7 @@ public class WalletProducer {
     private final String transferWithdrawalTopic = "created-wallet-retire-topic";
 
     private final String transferDepositTopic = "created-wallet-deposit-topic";
+
 
     @Autowired
     public WalletProducer(KafkaTemplate<String, Object> kafkaTemplate) {
@@ -45,4 +48,7 @@ public class WalletProducer {
 
     }
 
+    public void sendSaveCustomerService(Customer customer) {
+        kafkaTemplate.send(CREATE_CUSTOMER_TOPIC, customer );
+    }
 }

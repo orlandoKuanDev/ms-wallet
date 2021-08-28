@@ -14,29 +14,12 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Wallet {
-
     @Id
     private String id;
 
-    @Field(name = "name")
-    private String name;
-
-    @Field(name = "identityType")
-    private String identityType;
-
-    @Field(name = "identityNumber")
-    private String identityNumber;
-
-    @Field(name = "phoneNumber")
-    private String phoneNumber;
-
-    @Field(name = "cardNumber")
-    private String cardNumber;
+    @Field(name = "customer")
+    private Customer customer;
 
     @Field(name = "imei")
     private String imei;
-
-    @Field(name = "email")
-    private String email;
-
 }
