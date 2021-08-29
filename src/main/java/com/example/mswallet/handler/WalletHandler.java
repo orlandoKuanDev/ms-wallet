@@ -68,7 +68,6 @@ public class WalletHandler {
                     customer.setEmail(req.getEmail());
                     customer.setPhone(req.getPhone());
                     customer.setAddress(req.getAddress());
-                    /*walletProducer.sendSaveCustomerService(customer);*/
                     return customer;
                 })
                 .zipWhen(customer -> {
@@ -79,6 +78,7 @@ public class WalletHandler {
                     createAcquisitionDTO.setProduct(Product.builder()
                             .productName("MONEDERO").build());
                     createAcquisitionDTO.setInitial(0.0);
+                    walletProducer.sendSaveCustomerService(customer);
                     walletProducer.sendSaveAcquisitionService(createAcquisitionDTO);
                     return Mono.just(createAcquisitionDTO);
                 })
