@@ -2,6 +2,7 @@ package com.example.mswallet.topic.producer;
 
 import com.example.mswallet.model.Acquisition;
 import com.example.mswallet.model.Customer;
+import com.example.mswallet.model.dto.CreateAcquisitionDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -24,7 +25,7 @@ public class WalletProducer {
         kafkaTemplate.send(SERVICE_WALLET_TOPIC, customer );
     }
 
-    public void sendSaveAcquisitionService(Acquisition acquisition) {;
+    public void sendSaveAcquisitionService(CreateAcquisitionDTO acquisition) {
         kafkaTemplate.send(SERVICE_WALLET_TOPIC, acquisition );
     }
 }
