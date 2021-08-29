@@ -25,7 +25,7 @@ public class WalletProducer {
         kafkaTemplate.send(SERVICE_WALLET_TOPIC, customer );
     }
 
-    public void sendSaveAcquisitionService(CreateAcquisitionDTO acquisition) {
+    public void sendSaveAcquisitionService(Acquisition acquisition) {
         kafkaTemplate.send(SERVICE_WALLET_TOPIC, acquisition );
     }
 }

@@ -1,5 +1,6 @@
 package com.example.mswallet.handler;
 
+import com.example.mswallet.model.Acquisition;
 import com.example.mswallet.model.Customer;
 import com.example.mswallet.model.Product;
 import com.example.mswallet.model.Wallet;
@@ -19,6 +20,8 @@ import reactor.core.publisher.Mono;
 
 import java.io.DataInput;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
@@ -43,20 +46,56 @@ public class WalletHandler {
     public Mono<ServerResponse> save(ServerRequest request){
         Mono<Wallet> walletRequest = request.bodyToMono(Wallet.class);
         return walletRequest.flatMap(walletService::create)
-                .zipWhen(customer -> {
+                .flatMap(customer -> {
                     walletProducer.sendSaveCustomerService(customer.getCustomer());
                     return Mono.just(customer);
                 })
-                .flatMap(response -> ServerResponse.created(URI.create("/wallet/".concat(response.getT1().getId())))
+                .flatMap(response -> ServerResponse.created(URI.create("/wallet/".concat(response.getId())))
                         .contentType(APPLICATION_JSON)
-                        .bodyValue(response.getT1()))
+                        .bodyValue(response))
                 .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())));
     }
     public Mono<ServerResponse> createWallet(ServerRequest request){
         Mono<CreateWalletDTO> walletRequest = request.bodyToMono(CreateWalletDTO.class);
         Mono<Customer> customerForConsumer = Mono.just(new Customer());
         Mono<CreateAcquisitionDTO> acquisitionForConsumer = Mono.just(new CreateAcquisitionDTO());
-        return Mono.zip(walletRequest, customerForConsumer, acquisitionForConsumer)
+        return walletRequest
+                .zipWith(customerForConsumer, (req, customer) -> {
+                    customer.setCustomerType("PERSONAL");
+                    customer.setCustomerIdentityType(req.getCustomerIdentityType());
+                    customer.setCustomerIdentityNumber(req.getCustomerIdentityNumber());
+                    customer.setName(req.getName());
+                    customer.setEmail(req.getEmail());
+                    customer.setPhone(req.getPhone());
+                    customer.setAddress(req.getAddress());
+                    /*walletProducer.sendSaveCustomerService(customer);*/
+                    return customer;
+                })
+                .zipWhen(customer -> {
+                    Acquisition createAcquisitionDTO = new Acquisition();
+                    List<Customer> customers = new ArrayList<>();
+                    customers.add(customer);
+                    createAcquisitionDTO.setCustomerHolder(customers);
+                    createAcquisitionDTO.setProduct(Product.builder()
+                            .productName("MONEDERO").build());
+                    createAcquisitionDTO.setInitial(0.0);
+                    walletProducer.sendSaveAcquisitionService(createAcquisitionDTO);
+                    return Mono.just(createAcquisitionDTO);
+                })
+                .flatMap(wallet -> {
+                    Wallet wallet1 = new Wallet();
+                    wallet1.setCustomer(wallet.getT1());
+                    wallet1.setImei("446863186496");
+                    wallet1.setVerificationCode("S4AS6D");
+                    wallet1.setVerificationPhoto(true);
+                    return walletService.create(wallet1);
+                })
+                .flatMap(wallet -> ServerResponse.created(URI.create("/wallet/".concat(wallet.getId())))
+                        .contentType(APPLICATION_JSON)
+                        .bodyValue(wallet))
+                .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())));
+
+        /*return Mono.zip(walletRequest, customerForConsumer, acquisitionForConsumer)
                 .zipWhen(data -> {
                     data.getT2().setCustomerType("PERSONAL");
                     data.getT2().setCustomerIdentityType(data.getT1().getCustomerIdentityType());
@@ -67,24 +106,20 @@ public class WalletHandler {
                     data.getT2().setAddress(data.getT1().getAddress());
 
                     walletProducer.sendSaveCustomerService(data.getT2());
-                    return walletService.create(Wallet.builder()
-                                    .customer(data.getT2())
-                                    .verificationCode("DFH19854")
-                                    .imei("947859511")
-                                    .verificationPhoto(true)
-                            .build());
+                   return Mono.just(data.getT2());
                 })
                 .flatMap(result -> {
-                    result.getT1().getT3().setCustomerHolder(result.getT2().getCustomer());
+                    result.setCustomerHolder(result.getT2().getCustomer());
                     result.getT1().getT3().setProduct(Product.builder()
                                     .productName("MONEDERO")
                             .build());
+                    result.getT1().getT3().setInitial(0.0);
                     walletProducer.sendSaveAcquisitionService(result.getT1().getT3());
                     return Mono.just(result.getT2());
                 })
                 .flatMap(wallet -> ServerResponse.created(URI.create("/wallet/".concat(wallet.getId())))
                         .contentType(APPLICATION_JSON)
                         .bodyValue(wallet))
-                .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())));
+                .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())));*/
     }
 }

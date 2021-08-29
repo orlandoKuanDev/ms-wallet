@@ -15,6 +15,7 @@ public class RouterConfig {
     @Bean
     public RouterFunction<ServerResponse> rutas(WalletHandler handler){
         return route(GET("/wallets"), handler::findAll)
-                .andRoute(POST("/wallet"), handler::save);
+                .andRoute(POST("/wallet"), handler::save)
+                .andRoute(POST("/wallet/create"), handler::createWallet);
     }
 }
