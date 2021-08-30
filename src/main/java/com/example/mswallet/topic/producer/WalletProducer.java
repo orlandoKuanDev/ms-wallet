@@ -14,6 +14,8 @@ public class WalletProducer {
 
     private final static String SERVICE_WALLET_TOPIC = "service-wallet-topic";
 
+    private final static String SERVICE_CREATE_CUSTOMER_TOPIC = "service-create-customer-topic";
+
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Autowired
@@ -22,7 +24,7 @@ public class WalletProducer {
     }
 
     public void sendSaveCustomerService(Customer customer) {
-        kafkaTemplate.send(SERVICE_WALLET_TOPIC, customer );
+        kafkaTemplate.send(SERVICE_CREATE_CUSTOMER_TOPIC, customer );
     }
 
     public void sendSaveAcquisitionService(Acquisition acquisition) {
