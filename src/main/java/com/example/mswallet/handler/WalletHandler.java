@@ -3,7 +3,6 @@ package com.example.mswallet.handler;
 import com.example.mswallet.coverter.TransferenceConverter;
 import com.example.mswallet.coverter.WalletConverter;
 import com.example.mswallet.model.*;
-import com.example.mswallet.model.dto.CreateAcquisitionDTO;
 import com.example.mswallet.model.dto.CreateTransferenceDTO;
 import com.example.mswallet.model.dto.CreateWalletDTO;
 import com.example.mswallet.model.dto.TransferenceDTO;
@@ -12,6 +11,8 @@ import com.example.mswallet.services.CustomerService;
 import com.example.mswallet.services.IWalletService;
 import com.example.mswallet.services.TransferenceService;
 import com.example.mswallet.topic.producer.WalletProducer;
+import com.example.mswallet.util.ImeiGenerator;
+import com.example.mswallet.util.VerificationCodeGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -21,6 +22,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,10 +74,8 @@ public class WalletHandler {
                         .bodyValue(response))
                 .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())));
     }
-    public Mono<ServerResponse> createWallet(ServerRequest request){
-        Mono<CreateWalletDTO> walletRequest = request.bodyToMono(CreateWalletDTO.class);
+    public Mono<Customer> createCustomer(Mono<CreateWalletDTO> walletRequest){
         Mono<Customer> customerForConsumer = Mono.just(new Customer());
-        Mono<CreateAcquisitionDTO> acquisitionForConsumer = Mono.just(new CreateAcquisitionDTO());
         return walletRequest
                 .zipWith(customerForConsumer, (req, customer) -> {
                     customer.setCustomerType("PERSONAL");
@@ -87,7 +87,30 @@ public class WalletHandler {
                     customer.setAddress(req.getAddress());
                     walletProducer.sendSaveCustomerService(customer);
                     return customer;
+                });
+    }
+    public Mono<CreateWalletDTO> validateCustomer(Mono<CreateWalletDTO> walletRequest){
+        return walletRequest
+                .zipWhen(req -> {
+                    return walletService.findWalletByCustomer_Phone(req.getPhone())
+                            .switchIfEmpty(Mono.defer(() -> {
+                        return Mono.just(new Wallet());
+                    }));
                 })
+                .flatMap(wallet -> {
+                    if(wallet.getT2().getCustomer().getCustomerIdentityNumber() != null){
+                        return Mono.error(() -> new RuntimeException("The customer already exist"));
+                    }
+                    return Mono.just(wallet.getT1());
+                });
+    }
+    public Mono<ServerResponse> createWallet(ServerRequest request){
+        Mono<CreateWalletDTO> walletRequest = request.bodyToMono(CreateWalletDTO.class);
+        return walletRequest
+                //.as(this::validateCustomer)
+                .as(this::createCustomer)
+                .checkpoint("after customer create consumer")
+                .delayElement(Duration.ofMillis(2000))
                 .zipWhen(customer -> {
                     Acquisition createAcquisitionDTO = new Acquisition();
                     List<Customer> customers = new ArrayList<>();
@@ -102,8 +125,8 @@ public class WalletHandler {
                 .flatMap(wallet -> {
                     Wallet wallet1 = new Wallet();
                     wallet1.setCustomer(wallet.getT1());
-                    wallet1.setImei("446863186496");
-                    wallet1.setVerificationCode("S4AS6D");
+                    wallet1.setImei(new ImeiGenerator().generate());
+                    wallet1.setVerificationCode(new VerificationCodeGenerator().generate(8));
                     wallet1.setVerificationPhoto(true);
                     return walletService.create(wallet1);
                 })

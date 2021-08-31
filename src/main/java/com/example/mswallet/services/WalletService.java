@@ -25,4 +25,9 @@ public class WalletService extends BaseService<Wallet, String> implements IWalle
     public Mono<Wallet> findWalletByCustomer_Phone(String phone) {
         return repository.findWalletByCustomer_Phone(phone);
     }
+
+    @Override
+    public Boolean existsWalletByCustomer_CustomerIdentityNumber(String customerIdentityNumber) {
+        return repository.existsWalletByCustomer_CustomerIdentityNumber(customerIdentityNumber);
+    }
 }
