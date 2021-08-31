@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -43,6 +44,21 @@ public class AcquisitionService {
                     return Mono.error(new RuntimeException("THE ACQUISITION FIND FAILED"));
                 })
                 .bodyToMono(Acquisition.class);
+    }
+
+    public Flux<Acquisition> findAllByCustomer(String identityNumber) {
+        return webClientBuilder
+                .baseUrl("http://SERVICE-ACQUISITION/acquisition")
+                .build()
+                .get()
+                .uri("/customers/{identityNumber}", Collections.singletonMap("identityNumber", identityNumber))
+                .accept(APPLICATION_JSON)
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    logTraceResponse(logger, response);
+                    return Mono.error(new RuntimeException("THE ACQUISITION FIND FAILED"));
+                })
+                .bodyToFlux(Acquisition.class);
     }
 
     public Mono<Acquisition> findByIban(String iban) {

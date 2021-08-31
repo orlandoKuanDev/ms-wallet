@@ -5,6 +5,7 @@ import com.example.mswallet.repository.IRepository;
 import com.example.mswallet.repository.IWalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 @Service
 public class WalletService extends BaseService<Wallet, String> implements IWalletService{
@@ -18,5 +19,10 @@ public class WalletService extends BaseService<Wallet, String> implements IWalle
     @Override
     protected IRepository<Wallet, String> getRepository() {
         return repository;
+    }
+
+    @Override
+    public Mono<Wallet> findWalletByCustomer_Phone(String phone) {
+        return repository.findWalletByCustomer_Phone(phone);
     }
 }

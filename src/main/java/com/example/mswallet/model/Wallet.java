@@ -33,4 +33,7 @@ public class Wallet {
     @Field(name = "verificationPhoto")
     private Boolean verificationPhoto;
 
+    @Field(name = "acquisition")
+    private Acquisition acquisition;
+
 }
