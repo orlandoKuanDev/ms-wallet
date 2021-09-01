@@ -16,7 +16,9 @@ public class RouterConfig {
     public RouterFunction<ServerResponse> rutas(WalletHandler handler){
         return route(GET("/wallets"), handler::findAll)
                 .andRoute(GET("/wallets/acquisition/{identityNumber}"), handler::findByIdentityNumber)
+                .andRoute(GET("/wallet/{phone}"), handler::findByPhone)
                 .andRoute(POST("/wallet"), handler::save)
+                .andRoute(POST("/wallet/transference"), handler::transferenceWallet)
                 .andRoute(POST("/wallet/create"), handler::createWallet);
     }
 }
