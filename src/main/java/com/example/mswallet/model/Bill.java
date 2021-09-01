@@ -24,7 +24,7 @@ public class Bill {
 
     @Field(name = "dateOpened")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime dateOpened = LocalDateTime.now();;
+    private LocalDateTime dateOpened = LocalDateTime.now();
 
     @Field(name = "balance")
     private double balance;
