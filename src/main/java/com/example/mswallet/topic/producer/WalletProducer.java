@@ -2,6 +2,7 @@ package com.example.mswallet.topic.producer;
 
 import com.example.mswallet.model.Acquisition;
 import com.example.mswallet.model.Customer;
+import com.example.mswallet.model.dto.CreateAssociationResponseDTO;
 import com.example.mswallet.model.dto.CreateTransferenceDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,8 @@ public class WalletProducer {
     private static final String SERVICE_CREATE_RETIRE_TOPIC = "service-create-retire-topic";
 
     private static final String SERVICE_CREATE_DEPOSIT_TOPIC = "service-create-deposit-topic";
+
+    private static final String SERVICE_ASSOCIATE_DEBIT_TOPIC = "service-associate-debit-topic";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -41,5 +44,8 @@ public class WalletProducer {
 
     public void sendSaveDepositService(CreateTransferenceDTO deposit) {
         kafkaTemplate.send(SERVICE_CREATE_DEPOSIT_TOPIC, deposit );
+    }
+    public void sendAssociateDebitService(CreateAssociationResponseDTO association) {
+        kafkaTemplate.send(SERVICE_ASSOCIATE_DEBIT_TOPIC, association );
     }
 }

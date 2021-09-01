@@ -18,6 +18,8 @@ public class RouterConfig {
                 .andRoute(GET("/wallets/acquisition/{identityNumber}"), handler::findByIdentityNumber)
                 .andRoute(GET("/wallet/{phone}"), handler::findByPhone)
                 .andRoute(POST("/wallet"), handler::save)
+                .andRoute(POST("/wallet/association"), handler::associateWalletWithDebit)
+                .andRoute(POST("/wallet/operation"), handler::transactionWallet)
                 .andRoute(POST("/wallet/transference"), handler::transferenceWallet)
                 .andRoute(POST("/wallet/create"), handler::createWallet);
     }

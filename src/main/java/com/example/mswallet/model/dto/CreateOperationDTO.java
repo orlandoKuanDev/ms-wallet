@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class createOperationDTO {
+public class CreateOperationDTO {
     private Double amount;
     private String description;
-    private String accountNumber;
+    private String phone;
     private String operation;
 }

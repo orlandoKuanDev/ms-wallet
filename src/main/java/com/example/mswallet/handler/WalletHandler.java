@@ -3,10 +3,7 @@ package com.example.mswallet.handler;
 import com.example.mswallet.coverter.TransferenceConverter;
 import com.example.mswallet.coverter.WalletConverter;
 import com.example.mswallet.model.*;
-import com.example.mswallet.model.dto.CreateTransferenceDTO;
-import com.example.mswallet.model.dto.CreateWalletDTO;
-import com.example.mswallet.model.dto.TransferenceDTO;
-import com.example.mswallet.model.dto.TransferenceRequestDTO;
+import com.example.mswallet.model.dto.*;
 import com.example.mswallet.model.dto.response.ApiResponse;
 import com.example.mswallet.services.AcquisitionService;
 import com.example.mswallet.services.CustomerService;
@@ -147,46 +144,51 @@ public class WalletHandler {
                 .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())));
     }
 
-    private Mono<ServerResponse> createRetireWallet(ServerRequest request){
-        Mono<CreateTransferenceDTO> createRetireFromWallet = request.bodyToMono(CreateTransferenceDTO.class);
+    public Mono<ServerResponse> transactionWallet(ServerRequest request){
+        Mono<CreateOperationDTO> createRetireFromWallet = request.bodyToMono(CreateOperationDTO.class);
         return createRetireFromWallet
-                .zipWhen(createRetire -> walletService.findWalletByCustomer_Phone(createRetire.getAccountNumber()))
+                .zipWhen(createRetire -> walletService.findWalletByCustomer_Phone(createRetire.getPhone()))
                 .switchIfEmpty(Mono.error(new RuntimeException("Wallet does not exist")))
-                .zipWhen(wallet -> acquisitionService.findAllByCustomer(wallet.getT2().getCustomer().getCustomerIdentityNumber())
+                .flatMap(wallet -> acquisitionService.findAllByCustomer(wallet.getT2().getCustomer().getCustomerIdentityNumber())
                         .collectList()
                         .flatMap(acquisitions -> {
-                            log.info("ACQUISITION_LIST, {}", acquisitions);
                             Acquisition origen = acquisitions.stream()
                                     .filter(acquisition -> acquisition.getProduct().getProductName().equals("MONEDERO"))
                                     .findFirst()
                                     .orElse(new Acquisition());
-                            CreateTransferenceDTO retire = new CreateTransferenceDTO();
-                            retire.setAmount(wallet.getT1().getAmount());
-                            retire.setAccountNumber(origen.getBill().getAccountNumber());
-                            retire.setDescription(String.format("retire %s soles from wallet",
+                            CreateTransferenceDTO transaction = new CreateTransferenceDTO();
+                            transaction.setAmount(wallet.getT1().getAmount());
+                            transaction.setAccountNumber(origen.getBill().getAccountNumber());
+                            transaction.setDescription(String.format("retire %s soles from wallet",
                                     wallet.getT1().getAmount()));
-                            retire.setCardNumber("");
-                            log.info("ACQUISITION_LIST, {}", retire);
-                            walletProducer.sendSaveRetireService(retire);
+                            transaction.setCardNumber("");
+
+                            String operation = wallet.getT1().getOperation();
+                            if (operation.equals("deposit")){
+                               walletProducer.sendSaveDepositService(transaction);
+                            }else if (operation.equals("retire")){
+                                walletProducer.sendSaveRetireService(transaction);
+                            }else{
+                               return Mono.error(() -> new RuntimeException("Operation not available"));
+                            }
                             return Mono.just(origen);
                         })
                 )
                 .flatMap(retire -> ServerResponse.ok()
                         .contentType(APPLICATION_JSON)
                         .bodyValue(ApiResponse.builder()
-                                .message("The retire was successful")
+                                .message("The operation was successful")
                                 .data(retire)
                                 .time(LocalDateTime.now())
                                 .build()))
                 .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())));
     }
 
+
     public Mono<ServerResponse> transferenceWallet(ServerRequest request){
         Mono<TransferenceRequestDTO> transferRequest = request.bodyToMono(TransferenceRequestDTO.class);
-        log.info("TRANSFERENCES_DTO, {}", transferRequest);
         return transferRequest
                 .zipWhen(transfer -> {
-                    log.info("TRANSFERENCES_DTO, {}", transfer);
                     Mono<Wallet> origenWallet = walletService
                             .findWalletByCustomer_Phone(transfer.getPhoneOrigen())
                             .switchIfEmpty(Mono.error(new RuntimeException("Wallet origen does not exist")));
@@ -255,7 +257,35 @@ public class WalletHandler {
                         .contentType(APPLICATION_JSON)
                         .bodyValue(transference))
                 .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())));
+    }
 
+    public Mono<ServerResponse> associateWalletWithDebit(ServerRequest request){
+        Mono<CreateAssociationDTO> associationDTO = request.bodyToMono(CreateAssociationDTO.class);
+        return associationDTO
+                .zipWhen(createRetire -> walletService.findWalletByCustomer_Phone(createRetire.getPhone()))
+                .switchIfEmpty(Mono.error(new RuntimeException("Wallet does not exist")))
+                .flatMap(wallet -> acquisitionService.findAllByCustomer(wallet.getT2().getCustomer().getCustomerIdentityNumber())
+                        .collectList()
+                        .flatMap(acquisitions -> {
+                            Acquisition origen = acquisitions.stream()
+                                    .filter(acquisition -> acquisition.getProduct().getProductName().equals("MONEDERO"))
+                                    .findFirst()
+                                    .orElse(new Acquisition());
+                            CreateAssociationResponseDTO associationResponseDTO = new CreateAssociationResponseDTO();
+                            associationResponseDTO.setIban(origen.getIban());
+                            associationResponseDTO.setCardNumber(wallet.getT1().getCardNumber());
+                            walletProducer.sendAssociateDebitService(associationResponseDTO);
+                            return Mono.just(origen);
+                        })
+                )
+                .flatMap(retire -> ServerResponse.ok()
+                        .contentType(APPLICATION_JSON)
+                        .bodyValue(ApiResponse.builder()
+                                .message("The association of debit with wallet  was successful")
+                                .data(retire)
+                                .time(LocalDateTime.now())
+                                .build()))
+                .onErrorResume(error -> Mono.error(new RuntimeException(error.getMessage())));
 
     }
 }
